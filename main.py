@@ -8,8 +8,73 @@ import random
 import os
 
 def Memorize_lesson_func(chosen_lesson):
-    #work in progress
-    pass
+    correct_words_string = ""
+    wrong_words_string = ""
+    missing_words_string = ""
+    memorize_lesson_layout = [
+        [sg.Multiline("",expand_x= True, key = "input_memorizelesson",size = (80,15))],
+        [sg.Button("Check", expand_x = True, key = "button_check")],
+        [sg.Text("Correct words: N/A", key = "text_correct")],
+        [sg.Text("Wrong words: N/A", key = "text_wrong")],
+        [sg.Text("Missing words: N/A", key = "text_missing")]
+    ]
+    memorize_lesson_window = sg.Window('Memorizer helper', memorize_lesson_layout, finalize = True)
+    sealed = False
+    while True:
+        event, values = memorize_lesson_window.read()
+        if event == "button_check":
+            correct_words = []
+            correct_words_string = ""
+            wrong_words_string = ""
+            missing_words_string = ""
+            memorize_attempt = values["input_memorizelesson"].lower()
+            memorize_attempt_list = list(memorize_attempt.split(" "))
+            chosen_lesson_list = list(chosen_lesson.split(" "))
+            print(chosen_lesson_list)
+            if memorize_attempt_list == chosen_lesson_list:
+                print("cool")
+            for lesson_word in chosen_lesson_list:
+                print(lesson_word) 
+                for memorized_word in memorize_attempt_list:
+                    if lesson_word == memorized_word:
+                        #print(lesson_word)
+                        correct_words.append(lesson_word)
+            for correct_word in correct_words:
+                chosen_lesson_list.remove(correct_word)
+                memorize_attempt_list.remove(correct_word)
+                correct_words_string += f"{correct_word}, "
+            
+            for wrong_word in memorize_attempt_list:
+                wrong_words_string += f"{wrong_word}, "
+
+            for missing_word in chosen_lesson_list:
+                missing_words_string += f"{missing_word}, "
+
+
+            if correct_words_string:
+                memorize_lesson_window["text_correct"].update(f"Correct words: {correct_words_string}")
+            else : memorize_lesson_window["text_correct"].update(f"Correct words: None );")
+
+            if correct_words_string:
+                memorize_lesson_window["text_wrong"].update(f"Wrong words: {wrong_words_string}")
+            else : memorize_lesson_window["text_wrong"].update(f"Wrong words: None ;)")
+
+            if correct_words_string:
+                memorize_lesson_window["text_missing"].update(f"Missing words: {missing_words_string}")
+            else : memorize_lesson_window["text_missing"].update(f"Missing words: None ;)")
+
+            print(f"Correct words:{correct_words}")
+            print(f"Wrong words:{memorize_attempt_list}")
+            print(f"missing words:{chosen_lesson_list}")
+
+
+
+        if event == sg.WIN_CLOSED:
+            memorize_lesson_window.close()
+            sealed = True
+            break
+    if not sealed:
+        main_thing()
 
 def Read_lesson_func(chosen_lesson):
     read_lesson_layout = [
@@ -17,15 +82,35 @@ def Read_lesson_func(chosen_lesson):
         [sg.Button("Memorize", expand_x = True, key = "Button_memorize")],
         [sg.Button("Go back", expand_x = True, key = "Button_back")]
     ]
+    sealed = True
     read_lesson_window = sg.Window('Memorizer helper', read_lesson_layout, finalize = True)
     while True:
         event, values = read_lesson_window.read()
         
-        if event == sg.WIN_CLOSED or event == "Button_back":
+        if event == "Button_memorize":
+            sealed = False
+            goback = False
+            memorize = True
             read_lesson_window.close()
             break
 
-    main_thing()
+        if event == "Button_back":
+            sealed = False
+            goback = True
+            memorize = False
+            read_lesson_window.close()
+            break
+
+        if event == sg.WIN_CLOSED:
+            read_lesson_window.close()
+            sealed = True
+            break
+    if not sealed:
+        if goback:
+            main_thing()
+        elif memorize:
+            Memorize_lesson_func(chosen_lesson)
+
 
 def New_lesson_func():
     new_lesson_layout = [
@@ -58,17 +143,20 @@ def Save_data(data):
         saved_data = open(f"dataenclosure/data.bin", "a")
     except Exception:
         saved_data = open(f"dataenclosure/data.bin", "w")
-    saved_data.write(str(data) + ",")
+    saved_data.write((str(data) + ",").lower())
     saved_data.close()
 
 def overwrite(data):
     saved_data = open(f"dataenclosure/data.bin", "w")
-    saved_data.write(str(data))
+    saved_data.write((str(data)).lower())
     saved_data.close()
 
 def main_thing():
     sg.theme('DarkTeal1')
-    sg.set_options(font = ("qualy",16))
+    try:
+        sg.set_options(font = ("qualy",16), icon = "dataenclosure/icon.ico")
+    except Exception:
+        pass
     try:
         loaded_data = open(f"dataenclosure/data.bin", "r")
     except FileNotFoundError:
