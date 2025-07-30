@@ -1,228 +1,152 @@
-import os
-import sys
-if sys.version_info[0] >= 3:
-    import PySimpleGUI as sg
-else:
-    import PySimpleGUI27 as sg
-import random
+from tkinter import *
+import pandas as pd
 import os
 
-def Memorize_lesson_func(chosen_lesson):
-    correct_words_string = ""
-    wrong_words_string = ""
-    missing_words_string = ""
-    memorize_lesson_layout = [
-        [sg.Multiline("",expand_x= True, key = "input_memorizelesson",size = (80,15))],
-        [sg.Button("Check", expand_x = True, key = "button_check")],
-        [sg.Text("Correct words: N/A", key = "text_correct")],
-        [sg.Text("Wrong words: N/A", key = "text_wrong")],
-        [sg.Text("Missing words: N/A", key = "text_missing")]
-    ]
-    memorize_lesson_window = sg.Window('Memorizer helper', memorize_lesson_layout, finalize = True)
-    sealed = False
-    while True:
-        event, values = memorize_lesson_window.read()
-        if event == "button_check":
-            correct_words = []
-            correct_words_string = ""
-            wrong_words_string = ""
-            missing_words_string = ""
-            memorize_attempt = values["input_memorizelesson"].lower()
-            memorize_attempt_list = list(memorize_attempt.split(" "))
-            chosen_lesson_list = list(chosen_lesson.split(" "))
-            print(chosen_lesson_list)
-            if memorize_attempt_list == chosen_lesson_list:
-                print("cool")
-            for lesson_word in chosen_lesson_list:
-                print(lesson_word) 
-                for memorized_word in memorize_attempt_list:
-                    if lesson_word == memorized_word:
-                        #print(lesson_word)
-                        correct_words.append(lesson_word)
-            for correct_word in correct_words:
-                chosen_lesson_list.remove(correct_word)
-                memorize_attempt_list.remove(correct_word)
-                correct_words_string += f"{correct_word}, "
-            
-            for wrong_word in memorize_attempt_list:
-                wrong_words_string += f"{wrong_word}, "
-
-            for missing_word in chosen_lesson_list:
-                missing_words_string += f"{missing_word}, "
-
-
-            if correct_words_string:
-                memorize_lesson_window["text_correct"].update(f"Correct words: {correct_words_string}")
-            else : memorize_lesson_window["text_correct"].update(f"Correct words: None );")
-
-            if correct_words_string:
-                memorize_lesson_window["text_wrong"].update(f"Wrong words: {wrong_words_string}")
-            else : memorize_lesson_window["text_wrong"].update(f"Wrong words: None ;)")
-
-            if correct_words_string:
-                memorize_lesson_window["text_missing"].update(f"Missing words: {missing_words_string}")
-            else : memorize_lesson_window["text_missing"].update(f"Missing words: None ;)")
-
-            print(f"Correct words:{correct_words}")
-            print(f"Wrong words:{memorize_attempt_list}")
-            print(f"missing words:{chosen_lesson_list}")
-
-
-
-        if event == sg.WIN_CLOSED:
-            memorize_lesson_window.close()
-            sealed = True
-            break
-    if not sealed:
-        main_thing()
-
-def Read_lesson_func(chosen_lesson):
-    read_lesson_layout = [
-        [sg.Text(str(chosen_lesson))],
-        [sg.Button("Memorize", expand_x = True, key = "Button_memorize")],
-        [sg.Button("Go back", expand_x = True, key = "Button_back")]
-    ]
-    sealed = True
-    read_lesson_window = sg.Window('Memorizer helper', read_lesson_layout, finalize = True)
-    while True:
-        event, values = read_lesson_window.read()
-        
-        if event == "Button_memorize":
-            sealed = False
-            goback = False
-            memorize = True
-            read_lesson_window.close()
-            break
-
-        if event == "Button_back":
-            sealed = False
-            goback = True
-            memorize = False
-            read_lesson_window.close()
-            break
-
-        if event == sg.WIN_CLOSED:
-            read_lesson_window.close()
-            sealed = True
-            break
-    if not sealed:
-        if goback:
-            main_thing()
-        elif memorize:
-            Memorize_lesson_func(chosen_lesson)
-
-
-def New_lesson_func():
-    new_lesson_layout = [
-        [sg.Text("New lesson!",expand_x = True, justification = "center", key = "text_newlesson")],
-        [sg.Text("Title :",expand_x = True, justification = "left")],
-        [sg.Input("", expand_x = True, key = "input_title")],
-        [sg.Text("Lesson :",expand_x = True, justification = "left")],
-        [sg.Multiline("",expand_x= True, key = "input_lesson",size = (80,15))],
-        [sg.Button("Save",expand_x= True, key = "button_save")]
-    ]
-    new_lesson_window = sg.Window('Memorizer helper', new_lesson_layout, finalize = True)
-    sealed = False
-
-    while True:
-        event, values = new_lesson_window.read()
-        if event == "button_save":
-            new_lesson_title = values["input_title"]
-            new_lesson_core = values["input_lesson"]
-            Save_data(f"{new_lesson_title}/{new_lesson_core}")
-            break
-        if event == sg.WIN_CLOSED:
-            sealed = True
-            break
-    new_lesson_window.close()
-    if not sealed:
-        main_thing()
-
-def Save_data(data):
-    try:
-        saved_data = open(f"dataenclosure/data.bin", "a")
-    except Exception:
-        saved_data = open(f"dataenclosure/data.bin", "w")
-    saved_data.write((str(data) + ",").lower())
-    saved_data.close()
-
-def overwrite(data):
-    saved_data = open(f"dataenclosure/data.bin", "w")
-    saved_data.write((str(data)).lower())
-    saved_data.close()
-
-def main_thing():
-    sg.theme('DarkTeal1')
-    try:
-        sg.set_options(font = ("qualy",16), icon = "dataenclosure/icon.ico")
-    except Exception:
+def save_lesson_func(title, content, window_new):
+    if not title or not content:
         pass
-    try:
-        loaded_data = open(f"dataenclosure/data.bin", "r")
-    except FileNotFoundError:
-        loaded_data = open(f"dataenclosure/data.bin", "w")
-        loaded_data.close()
-        loaded_data = open(f"dataenclosure/data.bin", "r")
-    loaded_data = loaded_data.read()
-    layout = [
-        [sg.Text("Choose a lesson to memorize or make a new one!",expand_x = True, justification = "center")],
-        [sg.Button("+", expand_x = True, key = "Add_button")]
-    ]
-    choosing_window = sg.Window('Memorizer helper', layout, finalize = True)
-    lessons = list(loaded_data.split(","))
-    cycles = 0
-    sealed = True
-    New_lesson = False
-    Read_lesson = False
-    for lesson in lessons:
-        if lesson:
-            lesson = list(lessons[cycles].split("/"))
-            cycles += 1
-            lesson_element = sg.Button(f"{lesson[0]}",expand_x=True, key = int(cycles))
-            remove_elemnt = sg.Button(f"❌", key = f"R{cycles}")
-            lesson_list = [[lesson_element,remove_elemnt]]
-            choosing_window.extend_layout(choosing_window,lesson_list)
-    cycles = 0
-    
-    while True:
-        event, values = choosing_window.read()
-        if event == "Add_button":
-            sealed = False
-            New_lesson = True
-            Read_lesson = False
-            break
-        if isinstance(event, int):
-            lesson_number = event - 1
-            chosen_lesson_list = list(lessons[lesson_number].split("/"))
-            chosen_lesson = chosen_lesson_list[1]
-            sealed = False
-            New_lesson = False
-            Read_lesson = True
-            break
-        try:
-            if event[0] == "R":
-                rawdata = open("dataenclosure/data.bin", "r")
-                rawdata_text = rawdata.read()
-                removed_string_number = int(event[1]) - 1
-                removed_string = lessons[removed_string_number]
-                rawdata_text =rawdata_text.replace(f"{removed_string},", "")
-                rawdata.close()
-                overwrite(rawdata_text)
-                sealed = False
-                break
-        except TypeError:
-            print("TypeError")
+    else:
+        title_text = title.get()
+        content_text = content.get("1.0", "end-1c")
 
-        if event == sg.WIN_CLOSED:
-            break
-    choosing_window.close()
-    if not sealed:
-        if New_lesson:
-            New_lesson_func()
-        elif Read_lesson:
-            Read_lesson_func(chosen_lesson)
+        window_new.destroy()
+
+        csv_file = 'lessons.csv'
+
+        file_exists = os.path.isfile(csv_file)
+        if file_exists:
+            if os.stat(csv_file).st_size == 0:
+                df = pd.DataFrame(columns=['Title', 'Content'])
+                df.to_csv(csv_file, index=False, sep=';')
         else:
-            main_thing()
+            df = pd.DataFrame(columns=['Title', 'Content'])
+            df.to_csv(csv_file, index=False, sep=';')
+
+        try:
+            df = pd.read_csv(csv_file, sep=';')
+        except pd.errors.EmptyDataError:
+            df = pd.DataFrame(columns=['Title', 'Content'])
+
+        df.loc[len(df.index)] = [title_text, content_text]
+        df.to_csv(csv_file, index=False, sep=';')
+
+        main()
+
+def Memorize_lesson(window_main, content, title, df):
+    window_main.destroy()
+    window_new = Tk()
+    window_new.geometry("1000x500")
+    window_new.title("Super memorizer helper")
+    window_new.config(background="#347deb")
+
+    button_frame = Frame(window_new, bg="#347deb")
+
+    title_text = Label(window_new, text="Title:", bg="#347deb", fg="white", font=("VIMH.otf", 15, 'bold'), pady=3)
+    title_entry = Entry(window_new, font=("Mothanna.ttf", 15), relief=RAISED, bd=7)
+
+    content_text = Label(window_new, text="Content:", bg="#347deb", fg="white", font=("VIMH.otf", 15, 'bold'), pady=3)
+    content_entry = Text(window_new, font=("Mothanna.ttf", 15), relief=RAISED, bd=7)
+
+    save_button = Button(button_frame, text="Save lesson", bg="#345beb", activebackground="#345beb", fg="white", 
+                     activeforeground="white", font=("VIMH.otf", 12, 'bold'), padx=0, pady=8, width=75,
+                     command=lambda: save_lesson_func(title_entry, content_entry, window_new))
+    return_button = Button(button_frame, text="←", bg="#345beb", activebackground="#345beb", fg="white", 
+                     activeforeground="white", font=("VIMH.otf", 12, 'bold'), padx=0, pady=8, width=25,
+                     command=lambda: read_lesson(df, title, window_new))
+
+    button_frame.pack()
+    return_button.pack( padx=0, pady=2.5)
+    save_button.pack( padx=0, pady=2.5)  
+    title_text.pack()
+    title_entry.pack(fill="x", padx=10, pady=5)
+    content_text.pack()  
+    content_entry.pack(fill="x", padx=10, pady=5)
+    window_new.mainloop()
+
+def new_lesson_func(window_main):
+    window_main.destroy()
+    window_new = Tk()
+    window_new.geometry("1000x500")
+    window_new.title("Super memorizer helper")
+    window_new.config(background="#347deb")
+
+    title_text = Label(window_new, text="Title:", bg="#347deb", fg="white", font=("VIMH.otf", 15, 'bold'), pady=3)
+    title_entry = Entry(window_new, font=("Mothanna.ttf", 15), relief=RAISED, bd=7)
+
+    content_text = Label(window_new, text="Content:", bg="#347deb", fg="white", font=("VIMH.otf", 15, 'bold'), pady=3)
+    content_entry = Text(window_new, font=("Mothanna.ttf", 15), relief=RAISED, bd=7)
+
+    save_button = Button(window_new, text="Save lesson", bg="#345beb", activebackground="#345beb", fg="white", 
+                     activeforeground="white", font=("VIMH.otf", 12, 'bold'), padx=15, pady=10,
+                     command=lambda: save_lesson_func(title_entry, content_entry, window_new))
+
+
+    title_text.pack()
+    title_entry.pack(fill="x", padx=10, pady=5)
+    content_text.pack()
+    content_entry.pack(fill="x", padx=10, pady=5)
+    save_button.pack(fill="x", padx=10, pady=5)
+    window_new.mainloop()
+
+def display_titles(window):
+    csv_file = 'lessons.csv'
+    if os.path.isfile(csv_file) and os.stat(csv_file).st_size > 0:
+        try:
+            df = pd.read_csv(csv_file, sep=';')
+            for title in df['Title']:
+                title_button = Button(window, text=title, bg="#4a90e2", fg="white", font=("Mothanna.ttf", 12, 'bold'),
+                                      command=lambda t=title: read_lesson(df, t, window))
+                title_button.pack(fill="x", padx=10, pady=2)
+        except Exception as e:
+            error_label = Label(window, text="Error reading titles.", bg="red", fg="white")
+            error_label.pack(fill="x", padx=10, pady=2)
+            print(f"Error: {e}")
+
+def read_lesson(df, title, window):
+    window.destroy()
+    content = df.loc[df['Title'] == title, 'Content'].values
+    if content.size > 0:
+        lesson_content = content[0]
+        lesson_window = Tk()
+        lesson_window.geometry("700x450")
+        lesson_window.title(title)
+        lesson_window.config(background="#347deb")
+
+        title_label = Label(lesson_window, text=title, bg="#347deb", fg="white", 
+                  font=("VIMH.otf", 20, 'bold'))
+        title_label.pack()
+
+        content_label = Label(lesson_window, text=lesson_content, bg="#347deb", fg="white", 
+                  font=("VIMH.otf", 20))
+        content_label.pack()
+
+        memorize_button = Button(lesson_window, text="Memorize", bg="#4a90e2", fg="white", font=("Mothanna.ttf", 12, 'bold'),
+                                 command=lambda: Memorize_lesson(lesson_window, content, title, df))
+        memorize_button.pack(side="bottom", fill="x", padx=10, pady=10)
+
+        lesson_window.mainloop()
+    else:
+        print(f"Title '{title}' not found.")
+
+def main():
+    window_main = Tk()
+    window_main.geometry("450x600")
+    window_main.title("Super memorizer helper")
+    icon = PhotoImage(file="logo.png")
+    window_main.iconphoto(True, icon)
+    window_main.config(background="#347deb")
+
+    label = Label(window_main, text="Super Memorizer Helper!", bg="#347deb", fg="white", 
+                  font=("VIMH.otf", 20, 'bold'), pady=30)
+    new_lesson_button = Button(window_main, text="Create New Lesson", bg="#345beb", activebackground="#345beb", fg="white", 
+                               activeforeground="white", font=("VIMH.otf", 12, 'bold'), padx=50, relief=RAISED, 
+                               bd=3, command=lambda: new_lesson_func(window_main))
+
+    label.pack()
+    new_lesson_button.pack(fill="x", padx=10, pady=5)
+    display_titles(window_main)
+
+    window_main.mainloop()
 
 if __name__ == '__main__':
-    main_thing()
+    main()
